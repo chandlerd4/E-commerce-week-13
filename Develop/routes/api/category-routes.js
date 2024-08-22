@@ -1,83 +1,58 @@
 const router = require('express').Router();
 const { Category, Product } = require('../../models');
 
-// Helper function to handle responses
-const handleResponse = (res, data, status = 200) => res.status(status).json(data);
+// Utility function to handle async requests
+const asyncHandler = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
-// Get all categories with associated Products
-router.get('/', async (req, res) => {
-  try {
-    const categories = await Category.findAll({
-      include: [{ model: Product }],
-    });
-    handleResponse(res, categories);
-  } catch (error) {
-    handleResponse(res, { error: 'Failed to retrieve categories', details: error.message }, 500);
-  }
-});
+// Get all categories
+router.get('/', asyncHandler(async (req, res) => {
+  const categories = await Category.findAll({ include: Product });
+  res.status(200).json(categories);
+}));
 
-// Get a category by ID with associated Products
-router.get('/:id', async (req, res) => {
-  try {
-    const category = await Category.findByPk(req.params.id, {
-      include: [{ model: Product }],
-    });
-    if (!category) {
-      return handleResponse(res, { message: 'Category not found with that id!' }, 404);
-    }
-    handleResponse(res, category);
-  } catch (error) {
-    handleResponse(res, { error: 'Failed to retrieve category', details: error.message }, 500);
+// Get one category
+router.get('/:id', asyncHandler(async (req, res) => {
+  const category = await Category.findByPk(req.params.id, { include: Product });
+
+  if (!category) {
+    return res.status(404).json({ message: 'No category found with this id!' });
   }
-});
+
+  res.status(200).json(category);
+}));
 
 // Create a new category
-router.post('/', async (req, res) => {
-  try {
-    const { category_name } = req.body;
-    const newCategory = await Category.create({ category_name });
-    handleResponse(res, newCategory, 201);
-  } catch (error) {
-    handleResponse(res, { error: 'Failed to create category', details: error.message }, 500);
+router.post('/', asyncHandler(async (req, res) => {
+  const newCategory = await Category.create(req.body);
+  res.status(200).json(newCategory);
+}));
+
+// Update a category
+router.put('/:id', asyncHandler(async (req, res) => {
+  const [updated] = await Category.update(req.body, {
+    where: { id: req.params.id },
+  });
+
+  if (!updated) {
+    return res.status(404).json({ message: 'No category found with this id!' });
   }
-});
 
-// Update a category by ID
-router.put('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { category_name } = req.body;
-    const [numUpdatedRows] = await Category.update(
-      { category_name },
-      { where: { id } }
-    );
+  const updatedCategory = await Category.findByPk(req.params.id);
+  res.status(200).json(updatedCategory);
+}));
 
-    if (numUpdatedRows === 0) {
-      return handleResponse(res, { message: 'Category not found with that id!' }, 404);
-    }
+// Delete a category
+router.delete('/:id', asyncHandler(async (req, res) => {
+  const deleted = await Category.destroy({
+    where: { id: req.params.id },
+  });
 
-    const updatedCategory = await Category.findByPk(id);
-    handleResponse(res, updatedCategory);
-  } catch (error) {
-    handleResponse(res, { error: 'Failed to update category', details: error.message }, 500);
+  if (!deleted) {
+    return res.status(404).json({ message: 'No category found with this id!' });
   }
-});
 
-// Delete a category by ID
-router.delete('/:id', async (req, res) => {
-  try {
-    const numDeletedRows = await Category.destroy({
-      where: { id: req.params.id },
-    });
-
-    if (numDeletedRows === 0) {
-      return handleResponse(res, { message: 'Category not found with that id!' }, 404);
-    }
-
-    handleResponse(res, { message: 'Category deleted successfully' });
-  } catch (error) {
-    handleResponse(res, { error: 'Failed to delete category', details: error.message }, 500);
-  }
-});
+  res.status(200).json({ message: 'Category deleted successfully!' });
+}));
 
 module.exports = router;
