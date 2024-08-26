@@ -1,50 +1,28 @@
 const router = require('express').Router();
-const { Tag, Product } = require('../../models');
+const { Tag, Product, ProductTag } = require('../../models');
 
-const asyncHandler = fn => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
+// The `/api/tags` endpoint
 
-router.get('/', asyncHandler(async (req, res) => {
-  const tags = await Tag.findAll({ include: Product });
-  res.status(200).json(tags);
-}));
+router.get('/', (req, res) => {
+  // find all tags
+  // be sure to include its associated Product data
+});
 
-router.get('/:id', asyncHandler(async (req, res) => {
-  const tag = await Tag.findByPk(req.params.id, { include: Product });
+router.get('/:id', (req, res) => {
+  // find a single tag by its `id`
+  // be sure to include its associated Product data
+});
 
-  if (!tag) {
-    return res.status(404).json({ message: "No tag found with this ID!" });
-  }
+router.post('/', (req, res) => {
+  // create a new tag
+});
 
-  res.status(200).json(tag);
-}));
+router.put('/:id', (req, res) => {
+  // update a tag's name by its `id` value
+});
 
-router.post('/', asyncHandler(async (req, res) => {
-  const tag = await Tag.create({ tag_name: req.body.tag_name });
-  res.status(200).json(tag);
-}));
-
-router.put('/:id', asyncHandler(async (req, res) => {
-  const [updated] = await Tag.update(req.body, {
-    where: { id: req.params.id },
-  });
-
-  if (!updated) {
-    return res.status(404).json({ message: "No tag found with this ID!" });
-  }
-
-  const updatedTag = await Tag.findByPk(req.params.id);
-  res.status(200).json(updatedTag);
-}));
-
-router.delete('/:id', asyncHandler(async (req, res) => {
-  const deleted = await Tag.destroy({ where: { id: req.params.id } });
-
-  if (!deleted) {
-    return res.status(404).json({ message: "No tag found with this ID!" });
-  }
-
-  res.status(200).json({ message: "Tag deleted successfully!" });
-}));
+router.delete('/:id', (req, res) => {
+  // delete on tag by its `id` value
+});
 
 module.exports = router;
